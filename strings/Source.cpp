@@ -11,6 +11,29 @@ namespace chili
 		}
 	}
 
+	void printGraph(char** names, int* values, int count)
+	{
+		print("\n");
+		print("\n");
+		print("        Beautiful Chart Bitches!");
+		print("\n");
+		print("        ------------------------");
+		print("\n");
+		print("\n");
+		for (int i = 0; i < count; i++)
+		{
+			print(names[i]);
+			print("|");
+			for (int j = 0; j < values[i]; j++)
+			{
+				print("=");
+			}
+			print("\n");
+		}
+		print("\n");
+		print("\n");
+	}
+
 	void read( char* buf,int maxSize )
 	{
 		const char* const pEnd = buf + maxSize;
@@ -20,6 +43,26 @@ namespace chili
 			*buf = c;
 		}
 		*buf = 0;
+	}
+
+	void readMenuOption(char* buf)
+	{
+		read(buf, 2);
+	}
+	void readName(char* buf, int maxSize)
+	{
+		char* const pEnd = buf + maxSize;
+		for (char c = _getch(); c != 13 && (buf + 1 < pEnd); c = _getch(), buf++)
+		{
+			_putch(c);
+			*buf = c;
+		}
+		while (buf + 1 < pEnd )
+		{
+			*buf = 32;
+			buf++;
+		}
+		*(pEnd - 1) = 0;
 	}
 
 	int str2int( const char* s )
@@ -78,17 +121,76 @@ namespace chili
 	}
 }
 
+void Menu(char** names, int* values, int count)
+{
+	chili::print("(l)oad (s)ave (a)dd (q)uit (p)rint?");
+	char answer[60];
+	char answerName[10];
+	chili::readMenuOption(answer);
+	chili::print("\n");
+
+	switch (*answer)
+	{
+	case 'l':
+	{
+		chili::print("Enter File Name :");
+		chili::read(answer, 60);
+		std::ifstream in(answer, std::ios::binary);
+		in.read(reinterpret_cast<char*> (count), sizeof(int));
+		for (int i = 0; i < count; i++)
+		{
+			in.read(*(names + i), 1); // 10bytes(one name occupies 10 bytes including spaces.)
+			in.read(reinterpret_cast<char*>(values + i), sizeof(int));
+		}
+		Menu(names, values, count);
+	}
+		break;
+	case 's':
+	{
+		chili::print("Enter File Name :");
+		chili::read(answer, 60);
+		std::ofstream out(answer, std::ios::binary);
+		out.write(reinterpret_cast<char*>(&count), sizeof(int));
+		for (int i = 0; i < count; i++)
+		{
+			char* name = names[i];
+			out.write(name, sizeof(10)); // 10bytes(one name occupies 10 bytes including spaces.)
+			out.write(reinterpret_cast<char*>(values + i), sizeof(int));
+		}
+		chili::print("\n");
+		Menu(names, values, count);
+	}
+		break;
+	case 'a':
+		chili::print("Enter Name :");
+		chili::readName(answerName, 10);
+		names[count] = answerName;
+		chili::print("\nEnter Value :");
+		chili::read(answer, 60);
+		values[count] = chili::str2int(answer);
+		count++;
+		chili::print("\n");
+		Menu(names, values, count);
+		break;
+	case 'q':
+		break;
+	case 'p':
+		chili::printGraph(names, values, count);
+		Menu(names, values, count);
+		break;
+	default:
+		chili::print("Please select a valid option.\n");
+		Menu(names, values, count);
+	}
+	
+}
+
 int main()
 {
-	std::ifstream in( "boi.dat",std::ios::binary );
-	
-	int data;
-	in.read( reinterpret_cast<char*>(&data),sizeof( int ) );
-
-	char buffer[256];
-	chili::int2str( data,buffer,256 );
-	chili::print( buffer );
-
+	char* names[40];
+	int values[40];
+	int count = 0;
+	Menu(names, values, count);
 	while( !_kbhit() );
 	return 0;
 }
